@@ -3,14 +3,17 @@ version: '3.8'
 services:
   orquestador:
     build: .
-    ports:
-      - "5005:5005"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.orquestador.rule=Host(`orquestador.localhost`)"
+      - "traefik.http.services.orquestador.loadbalancer.server.port=5005"
     depends_on:
       - db
       - ms_pagos
       - ms_inventario
       - ms_catalogo
       - ms_compras
+      - rabbitmq
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
@@ -35,6 +38,10 @@ services:
   ms_pagos:
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-pagos
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ms_pagos.rule=Host(`ms_pagos.localhost`)"
+      - "traefik.http.services.ms_pagos.loadbalancer.server.port=5003"
     ports:
       - "5003:5003"
     environment:
@@ -45,6 +52,10 @@ services:
   ms_inventario:
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-inventario
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ms_inventario.rule=Host(`ms_inventario.localhost`)"
+      - "traefik.http.services.ms_inventario.loadbalancer.server.port=5000"
     ports:
       - "5000:5000"
     environment:
@@ -55,6 +66,10 @@ services:
   ms_catalogo:
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-catalogo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ms_catalogo.rule=Host(`ms_catalogo.localhost`)"
+      - "traefik.http.services.ms_catalogo.loadbalancer.server.port=5001"
     ports:
       - "5001:5001"
     environment:
@@ -65,12 +80,36 @@ services:
   ms_compras:
     build:
       context: C:/Users/juanv/Downloads/ms-compras
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ms_compras.rule=Host(`ms_compras.localhost`)"
+      - "traefik.http.services.ms_compras.loadbalancer.server.port=5002"
     ports:
       - "5002:5002"
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5002
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+
+  traefik:
+    image: "traefik:v2.5"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
 volumes:
   postgres_data:

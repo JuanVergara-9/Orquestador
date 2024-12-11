@@ -1,6 +1,7 @@
 import requests
 import time
 from flask import current_app
+from .rabbitmq import RabbitMQ
 
 class SagaOrchestrator:
     def __init__(self):
@@ -8,6 +9,7 @@ class SagaOrchestrator:
         self.payment_service_url = current_app.config['PAYMENT_SERVICE_URL']
         self.inventory_service_url = current_app.config['INVENTORY_SERVICE_URL']
         self.purchase_service_url = current_app.config['PURCHASE_SERVICE_URL']
+        self.rabbitmq = RabbitMQ(host='rabbitmq')  # Asegúrate de que el host sea correcto
 
     def execute(self, order_data):
         try:
@@ -15,9 +17,11 @@ class SagaOrchestrator:
             self.retry(self.process_payment, order_data)
             self.retry(self.confirm_purchase, order_data)
             self.retry(self.update_catalog, order_data)
+            self.rabbitmq.publish_message('order_queue', 'Order processed successfully')
             return {"status": "success"}
         except Exception as e:
             self.compensate(order_data)
+            self.rabbitmq.publish_message('order_queue', f'Order processing failed: {str(e)}')
             return {"status": "failure", "reason": str(e)}
 
     def reserve_inventory(self, order_data):
