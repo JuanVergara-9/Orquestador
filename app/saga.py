@@ -1,7 +1,11 @@
 import requests
 import time
 from flask import current_app
+import pybreaker
 from .rabbitmq import RabbitMQ
+
+# Configurar el Circuit Breaker
+breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
 
 class SagaOrchestrator:
     def __init__(self):
@@ -24,24 +28,28 @@ class SagaOrchestrator:
             self.rabbitmq.publish_message('order_queue', f'Order processing failed: {str(e)}')
             return {"status": "failure", "reason": str(e)}
 
+    @breaker
     def reserve_inventory(self, order_data):
         response = requests.post(f'{self.inventory_service_url}/reserve', json=order_data)
         response.raise_for_status()
 
+    @breaker
     def process_payment(self, order_data):
         response = requests.post(f'{self.payment_service_url}/process', json=order_data)
         response.raise_for_status()
 
+    @breaker
     def confirm_purchase(self, order_data):
         response = requests.post(f'{self.purchase_service_url}/confirm', json=order_data)
         response.raise_for_status()
 
+    @breaker
     def update_catalog(self, order_data):
         response = requests.post(f'{self.catalog_service_url}/update', json=order_data)
         response.raise_for_status()
 
     def compensate(self, order_data):
-        # Logic to compensate in case of failure
+        # Lógica para deshacer los cambios en caso de fallo
         pass
 
     def retry(self, func, *args, retries=3, delay=2):
