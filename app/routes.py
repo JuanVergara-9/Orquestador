@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from .services import process_order
-from . import limiter
+from .extension import limiter
 
 orchestrator_bp = Blueprint('orchestrator', __name__)
 

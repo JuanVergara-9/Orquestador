@@ -2,10 +2,13 @@ version: '3.8'
 
 services:
   orquestador:
+    ports:
+      - "5005:5005"
     build: .
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.orquestador.rule=Host(`orquestador.localhost`)"
+      - "traefik.http.routers.orquestador.entrypoints=web"
       - "traefik.http.services.orquestador.loadbalancer.server.port=5005"
     depends_on:
       - db
@@ -36,56 +39,60 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   ms_pagos:
+    ports:
+      - "5003:5003"
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-pagos
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ms_pagos.rule=Host(`ms_pagos.localhost`)"
+      - "traefik.http.routers.ms_pagos.entrypoints=web"
       - "traefik.http.services.ms_pagos.loadbalancer.server.port=5003"
-    ports:
-      - "5003:5003"
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5003
 
   ms_inventario:
+    ports:
+      - "5000:5000"
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-inventario
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ms_inventario.rule=Host(`ms_inventario.localhost`)"
+      - "traefik.http.routers.ms_inventario.entrypoints=web"
       - "traefik.http.services.ms_inventario.loadbalancer.server.port=5000"
-    ports:
-      - "5000:5000"
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5000
 
   ms_catalogo:
+    ports:
+      - "5001:5001"
     build:
       context: C:/Users/juanv/OneDrive/Documentos/ms-catalogo
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ms_catalogo.rule=Host(`ms_catalogo.localhost`)"
+      - "traefik.http.routers.ms_catalogo.entrypoints=web"
       - "traefik.http.services.ms_catalogo.loadbalancer.server.port=5001"
-    ports:
-      - "5001:5001"
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5001
 
   ms_compras:
+    ports:
+      - "5002:5002"
     build:
       context: C:/Users/juanv/Downloads/ms-compras
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ms_compras.rule=Host(`ms_compras.localhost`)"
+      - "traefik.http.routers.ms_compras.entrypoints=web"
       - "traefik.http.services.ms_compras.loadbalancer.server.port=5002"
-    ports:
-      - "5002:5002"
     environment:
       - FLASK_APP=run.py
       - FLASK_RUN_HOST=0.0.0.0
@@ -106,8 +113,8 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
     ports:
-      - "80:80"
-      - "8080:8080"
+      - "80:80"      # Antes era "81:80", ahora está corregido
+      - "8081:8080"  # Panel de Traefik en localhost:8081
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
